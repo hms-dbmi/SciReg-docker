@@ -30,6 +30,12 @@ export MYSQL_PASSWORD=$MYSQL_PASSWORD_VAULT
 export MYSQL_HOST=$MYSQL_HOST_VAULT
 export MYSQL_PORT=$MYSQL_PORT_VAULT
 
+SSL_KEY=$(/vault/vault read -field=value $VAULT_PATH/ssl_key)
+SSL_CERT_CHAIN=$(/vault/vault read -field=value $VAULT_PATH/ssl_cert_chain)
+
+echo $SSL_KEY | base64 -d >> /etc/nginx/ssl/server.key
+echo $SSL_CERT_CHAIN | base64 -d >> /etc/nginx/ssl/server.crt
+
 cd /SciReg/
 
 python manage.py migrate
@@ -37,8 +43,7 @@ python manage.py collectstatic --no-input
 
 /etc/init.d/nginx restart
 
-cmd="python -m smtpd -n -c DebuggingServer localhost:1025"
-nohup $cmd &
+nohup python -m smtpd -n -c DebuggingServer localhost:1025 > python_email.out &
 
 gunicorn SciReg.wsgi:application -b 0.0.0.0:8006
 
