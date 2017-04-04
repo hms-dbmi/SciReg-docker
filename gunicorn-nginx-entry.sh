@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo $ONETIME_TOKEN
+
 /vault/vault auth $ONETIME_TOKEN
 
 DJANGO_SECRET=$(/vault/vault read -field=value $VAULT_PATH/django_secret)
@@ -10,6 +12,7 @@ AUTH0_SUCCESS_URL_VAULT=$(/vault/vault read -field=value $VAULT_PATH/auth0_succe
 ACCOUNT_SERVER_URL_VAULT=$(/vault/vault read -field=value $VAULT_PATH/account_server_url)
 PERMISSION_SERVER_URL_VAULT=$(/vault/vault read -field=value $VAULT_PATH/permission_server_url)
 CONFIRM_EMAIL_URL_VAULT=$(/vault/vault read -field=value $VAULT_PATH/confirm_email_url)
+EMAIL_SALT_VAULT=$(/vault/vault read -field=value $VAULT_PATH/email_salt)
 
 MYSQL_USERNAME_VAULT=$(/vault/vault read -field=value $VAULT_PATH/mysql_username)
 MYSQL_PASSWORD_VAULT=$(/vault/vault read -field=value $VAULT_PATH/mysql_pw)
@@ -24,6 +27,7 @@ export AUTH0_SUCCESS_URL=$AUTH0_SUCCESS_URL_VAULT
 export ACCOUNT_SERVER_URL=$ACCOUNT_SERVER_URL_VAULT
 export PERMISSION_SERVER_URL=$PERMISSION_SERVER_URL_VAULT
 export CONFIRM_EMAIL_URL=$CONFIRM_EMAIL_URL_VAULT
+export EMAIL_SALT=$EMAIL_SALT_VAULT
 
 export MYSQL_USERNAME=$MYSQL_USERNAME_VAULT
 export MYSQL_PASSWORD=$MYSQL_PASSWORD_VAULT
@@ -40,6 +44,7 @@ cd /SciReg/
 
 python manage.py migrate
 python manage.py collectstatic --no-input
+python manage.py shell -c "from django.contrib.auth.models import User; User.objects.create_superuser('$ADMIN_EMAIL', '$ADMIN_EMAIL', '')" || echo "Super User already exists."
 
 /etc/init.d/nginx restart
 
