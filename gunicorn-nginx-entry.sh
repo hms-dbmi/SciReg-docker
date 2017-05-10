@@ -14,6 +14,7 @@ AUTHENTICATION_LOGIN_URL_VAULT=$(/vault/vault read -field=value $VAULT_PATH/acco
 PERMISSION_SERVER_URL_VAULT=$(/vault/vault read -field=value $VAULT_PATH/permission_server_url)
 CONFIRM_EMAIL_URL_VAULT=$(/vault/vault read -field=value $VAULT_PATH/confirm_email_url)
 EMAIL_SALT_VAULT=$(/vault/vault read -field=value $VAULT_PATH/email_salt)
+COOKIE_DOMAIN_VAULT=$(/vault/vault read -field=value $VAULT_PATH/cookie_domain)
 
 EMAIL_HOST=$(/vault/vault read -field=value $VAULT_PATH/email_host)
 EMAIL_HOST_USER=$(/vault/vault read -field=value $VAULT_PATH/email_host_user)
@@ -34,6 +35,7 @@ export AUTHENTICATION_LOGIN_URL=$AUTHENTICATION_LOGIN_URL_VAULT
 export PERMISSION_SERVER_URL=$PERMISSION_SERVER_URL_VAULT
 export CONFIRM_EMAIL_URL=$CONFIRM_EMAIL_URL_VAULT
 export EMAIL_SALT=$EMAIL_SALT_VAULT
+export COOKIE_DOMAIN=$COOKIE_DOMAIN_VAULT
 
 export MYSQL_USERNAME=$MYSQL_USERNAME_VAULT
 export MYSQL_PASSWORD=$MYSQL_PASSWORD_VAULT
@@ -54,7 +56,12 @@ echo $SSL_CERT_CHAIN | base64 -d >> /etc/nginx/ssl/server.crt
 cd /SciReg/
 
 python manage.py migrate
+
+if [ ! -d static ]; then
+  mkdir static
+fi
 python manage.py collectstatic --no-input
+
 python manage.py shell -c "from django.contrib.auth.models import User; User.objects.create_superuser('$ADMIN_EMAIL', '$ADMIN_EMAIL', '')" || echo "Super User already exists."
 
 /etc/init.d/nginx restart
